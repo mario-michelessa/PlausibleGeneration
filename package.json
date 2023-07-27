@@ -1,8 +1,8 @@
 {
-  "name": "svelte-app",
+  "name": "plausible-generation-interface",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
