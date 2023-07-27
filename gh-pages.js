@@ -6,8 +6,8 @@ ghpages.publish(
         branch: 'gh-pages',
         repo: 'https://github.com/mario-michelessa/PlausibleGeneration.git', // Update to point to your repository  
         user: {
-            name: 'Mario Michelessa', // update to use your name
-            email: 'mmichelessa@gmail.com' // Update to use your email
+            name: 'mario-michelessa', // update to use your name
+            email: 'mario.michelessa@student-cs.fr' // Update to use your email
         }
     },
     () => {
