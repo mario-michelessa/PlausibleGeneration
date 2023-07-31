@@ -1,7 +1,7 @@
 import os
 import json
 
-image_directory = 'public/real_images/'
+image_directory = 'public/docs/assets/generated_images/'
 
 # Get the list of image files in the directory
 image_files = [f for f in os.listdir(image_directory) if os.path.isfile(os.path.join(image_directory, f))]

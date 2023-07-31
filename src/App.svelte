@@ -4,32 +4,46 @@
 
 	let mousePosition = { x: 0, y: 0 };
 
-	const simPath = 'distances/t10_0.csv'
+	const simPath = 'docs/assets/distances/t10_0.csv'
 
 // ------------I/O
-	const realFolder = 'real_images/';
+	const realFolder = 'docs/assets/real_images/';
 	let realPaths = [];
-  
-	const generatedFolder = 'generated_images/';
+	
+	const generatedFolder = 'docs/assets/generated_images/';
 	let generatedPaths = [];
 	
 	const simMatrix = [];
 
 	const loadRealImages = async () => {
-		const response = await fetch('/real_images/manifest.json');
+		const response = await fetch('docs/assets/real_images/manifest.json');
 		const manifest = await response.json();
 		realPaths = manifest.map((fileName, index) => ({
 			path: `${realFolder}${fileName}`, 
 			index, 
-			tag:''}));
+			tag:'',
+			type: fileName.includes("mel") ? 'cancer' : 'benign' }));
+	};
+	const splitListsCancer = async (list) => {
+		let cancer = [];
+		let benign = [];
+		list.forEach((image) => {
+			if (['mel'].includes(image.path)) {
+				cancer.push(image);
+			} else {
+				benign.push(image);
+			}
+		});
+		return [cancer, benign];
 	};
 	const loadGeneratedImages = async () => {
-		const response = await fetch('/generated_images/manifest.json');
+		const response = await fetch('docs/assets/generated_images/manifest.json');
 		const manifest = await response.json();
 		generatedPaths = manifest.map((fileName, index) => ({ 
 			path: `${generatedFolder}${fileName}`, 
 			index,
-			tag:'' }));
+			tag:'',
+			type: fileName.includes("mel") ? 'cancer' : 'benign' }));
 	};
 	const loadSimMatrix = async () => {
   		try {
@@ -289,7 +303,7 @@
 	};
 //-----------------SWITCH DRAG MODES
 	
-	let dragMode = true;
+	let dragMode = false;
 	const switchDragMode = () => {
 		dragMode = !dragMode;
 	}
@@ -340,6 +354,11 @@
 			showTag = false;
 		}
   	};
+//-----------------ZOOM
+	// let imageSize = "100px"
+	// const zoomOutButton = () => {
+	// 	imageSize = (imageSize === "100px") ? "20px" : "100px"; // This is your JavaScript variable
+	// };
 // ------------INIT
 	onMount(async () => {
 		window.addEventListener('click', handleClickOutside);		
@@ -376,6 +395,9 @@
 	{/if}
 
 	<div class="panel container">
+		<!-- <button class="zoom-button btn btn-sm btn-secondary" on:click={zoomOutButton}>
+			Zoom out
+		</button> -->
 		<h2 class="top-panel">Real Images</h2>
 		<hr>
 		<div class="btn-group button-bar top-panel" >
@@ -385,28 +407,34 @@
 		</div>
 		<hr>
 		<div class="image-grid">
-			{#each realPaths as { path, index, selected } (path)}
+			{#each realPaths as { path, index, tag, type } (path)}
+			{#if type === 'benign'}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<div class="grid-item">
 				<div class="image-number"> {index} </div>
 				<img src={path} 
 					alt={path} 
-					class="panel-image img-rounded" class:selected={selectedIndex == index && selectedPanel == 'real'} 
-					on:click={(e) => handleRealImageClick(e, index)}/>
+					class="panel-image" class:selected={selectedIndex == index && selectedPanel == 'real' } 
+					on:click={(e) => handleRealImageClick(e, index)}
+					/>
 			</div>
+			{/if}
 			{/each}
 		</div>
 		<hr>
 		<div class="image-grid cancer">
-			{#each realPaths as { path, index, selected } (path)}
+			{#each realPaths as { path, index, tag, type} (path)}
+			{#if type === 'cancer'}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<div class="grid-item">
 				<div class="image-number"> {index} </div>
 				<img src={path} 
 					alt={path} 
 					class="panel-image img-rounded" class:selected={selectedIndex == index && selectedPanel == 'real'} 
-					on:click={(e) => handleRealImageClick(e, index)}/>
+					on:click={(e) => handleRealImageClick(e, index)}
+					/>
 			</div>
+			{/if}
 			{/each}
 		</div>
 	</div>
@@ -415,11 +443,14 @@
 		on:drop={(e) => handleDrop(e, "generated")}
 		on:dragover={(e) => handleDragOver(e)}
 		>
-		{#if !showDiscardPanel}
+		<!-- <button class="zoom-button btn btn-sm btn-secondary" on:click={zoomOutButton}>
+			Zoom out
+		</button> -->
+		<!-- {#if !showDiscardPanel}
 		<div class="close-button">
 			<button class = "btn btn-primary"on:click={hideDiscardPanel}>Discard Panel</button>
 		</div>
-		{/if}
+		{/if} -->
 		<h2 class=top-panel>Generated Images</h2>
 		<hr>
 		<div class="btn-group button-bar top-panel" >
@@ -432,7 +463,8 @@
 		</div>
 		<hr>
 		<div class="image-grid">
-			{#each generatedPaths as { path, index, tag } (path)}
+			{#each generatedPaths as { path, index, tag, type } (path)}
+			{#if type === 'benign'}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<!-- button for drag and drop -->
 			<div class="grid-item" 
@@ -449,7 +481,8 @@
 					alt={path}  
 					class="panel-image" 
 					class:selected={selectedIndex == index && selectedPanel == 'generated'} 
-					class:tagged={tag !== '' && (selectedIndex !== index || selectedPanel !== 'generated')} />
+					class:tagged={tag !== '' && (selectedIndex !== index || selectedPanel !== 'generated')} 
+					/>
 				<div class="tag-text">{tag}</div>
 
 				{#if showTag && selectedIndex === index}
@@ -489,11 +522,13 @@
 					</div>-->
 				{/if}
 			</div>
+			{/if}
 			{/each}
 		</div>
 		<hr>
 		<div class="image-grid cancer">
-			{#each generatedPaths as { path, index, tag } (path)}
+			{#each generatedPaths as { path, index, tag, type } (path)}
+			{#if type === 'cancer'}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<!-- button for drag and drop -->
 			<div class="grid-item" 
@@ -510,7 +545,8 @@
 					alt={path}  
 					class="panel-image" 
 					class:selected={selectedIndex == index && selectedPanel == 'generated'} 
-					class:tagged={tag !== '' && (selectedIndex !== index || selectedPanel !== 'generated')} />
+					class:tagged={tag !== '' && (selectedIndex !== index || selectedPanel !== 'generated')} 
+					/>
 				<div class="tag-text">{tag}</div>
 
 				{#if showTag && selectedIndex === index}
@@ -535,6 +571,7 @@
 					</div> 
 				{/if}
 			</div>
+			{/if}
 			{/each}
 		</div>
 	</div>
@@ -545,13 +582,11 @@
 		on:drop={(e) => handleDrop(e, "fake")}>
 		
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<!-- 		
-			<div class="close-button" on:click={hideDiscardPanel}>
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-				<path fill="#000" fill-rule="evenodd" d="M16 1.414L14.586 0 8 6.586 1.414 0 0 1.414 6.586 8 0 14.586 1.414 16 8 9.414 14.586 16 16 14.586 9.414 8z"/>
-				</svg>
-			</div>
-			-->
+			
+		<!-- <button class="zoom-button btn btn-sm btn-secondary" on:click={zoomOutButton}>
+			Zoom out
+		</button> -->
+		
 		<div class="top-panel">
 			<h2 class="fake-title">Fake Images</h2>
 			<hr>
@@ -564,7 +599,8 @@
 		</div>
 		<hr>
 		<div class="image-grid">
-			{#each fakePaths as { path, index, tag } (path)}
+			{#each fakePaths as { path, index, tag, type } (path)}
+			{#if type === 'benign'}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<!-- <div class="grid-item" 
 					on:click={(e) => handleGenImageClick(e, index, tag)}
@@ -578,9 +614,9 @@
 				<div class="image-number"> {index} </div>
 				<img src={path} 
 					alt={path}  
-					class="panel-image"/>
+					class="panel-image"
+					/>
 				<div class="tag-text">{tag}</div>
-				<!-- 
 				{#if showTag && selectedIndex === index}
 
 					<div class="tag-menu">
@@ -601,13 +637,15 @@
 						/>
 						<button on:click={() => addTag()}>Save Tag</button>
 					</div> 
-				{/if} -->
+				{/if} 
 				</div>
+			{/if}
 			{/each}
 		</div>
 		<hr>
 		<div class="image-grid cancer">
-			{#each fakePaths as { path, index, tag } (path)}
+			{#each fakePaths as { path, index, tag, type } (path)}
+			{#if type === 'cancer'}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<!-- <div class="grid-item" 
 					on:click={(e) => handleGenImageClick(e, index, tag)}
@@ -621,9 +659,9 @@
 				<div class="image-number"> {index} </div>
 				<img src={path} 
 					alt={path}  
-					class="panel-image"/>
+					class="panel-image"
+					/>
 				<div class="tag-text">{tag}</div>
-				<!-- 
 				{#if showTag && selectedIndex === index}
 
 					<div class="tag-menu">
@@ -644,8 +682,9 @@
 						/>
 						<button on:click={() => addTag()}>Save Tag</button>
 					</div> 
-				{/if} -->
+				{/if} 
 				</div>
+			{/if}
 			{/each}
 		</div>
 	</div>
@@ -695,7 +734,7 @@
 	button {
 		font-size: small;
 	}
-	.close-button {
+	.zoom-button {
 		position: absolute;
 		top: 10px;
 		right: 10px;
@@ -706,7 +745,8 @@
 	}
 /* IMAGE GRID */
 	.image-grid {
-		flex-grow: 1;
+		/* flex-grow: 1; */
+		flex: 1;
 		padding: 0px;
 		display: grid;	
 
@@ -718,7 +758,7 @@
 	}
 	.image-grid.cancer { 
 		background-color: rgba(255, 0, 0, 0.215);
-		border: #a46666 3px solid;
+		border: #a46666 1px solid;
 		max-height: 200px;
 	}
 	.image-grid::-webkit-scrollbar {
@@ -741,8 +781,10 @@
 		font-weight: 200;
 	}
 	.panel-image {
-		width : 100px;
-		height : 100px;
+		width:100px;
+		height:100px;
+		/* width : var(--size);
+		height : var(--size); */
 	}
 	.panel-image.selected {
 		border: 2px solid rgb(75, 112, 225);
